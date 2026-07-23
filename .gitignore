@@ -1,0 +1,29 @@
+# ── Внутренние рабочие документы (НЕ публиковать) ──────────────────
+# Навигаторы, снимки состояния, логи сессий, ТЗ, заметки — только для работы,
+# в публичный репозиторий не идут.
+/STATE.md
+/LOG.md
+/claude.md
+/CLAUDE.md
+/STRUCTURE.md
+/docs/
+/tools/
+/deliverables/
+
+# ── Артефакты сборки ──────────────────────────────────────────────
+/build/
+.build/
+DerivedData/
+*.app
+*.dmg
+
+# ── Xcode-проект (генерируется из project.yml через xcodegen) ──────
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+*.xcuserstate
+
+# ── Прочее ────────────────────────────────────────────────────────
+.DS_Store
+*.swp
+/publish-github.sh
