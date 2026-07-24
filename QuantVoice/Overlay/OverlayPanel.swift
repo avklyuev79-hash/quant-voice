@@ -79,7 +79,7 @@ final class OverlayPanel: NSPanel {
         switch state {
         case .idle:
             hidePanel()
-        case .listening, .transcribing, .refining, .inserting,
+        case .preparing, .listening, .transcribing, .refining, .inserting,
              .completed, .cancelled, .failed:
             showPanel()
         }

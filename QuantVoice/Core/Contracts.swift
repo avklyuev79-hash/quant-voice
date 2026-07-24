@@ -370,6 +370,10 @@ public protocol TermsApplying: AnyObject {
 /// Что показывает оверлей. Ровно эти состояния, других нет.
 public enum SessionState: Equatable, Sendable {
     case idle
+    /// Движок ещё греется (первый холодный прогрев — компиляция модели под чип,
+    /// может занять минуты). Отдельное состояние, чтобы не показывать «Распознаю…»
+    /// на пустом ожидании: пользователь принимает долгий прогрев за зависание.
+    case preparing
     case listening
     case transcribing
     case refining

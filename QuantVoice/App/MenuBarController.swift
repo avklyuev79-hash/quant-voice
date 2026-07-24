@@ -133,6 +133,7 @@ final class MenuBarController: NSObject {
     private func stateDescription(for state: SessionState) -> String {
         switch state {
         case .idle:                 return "готов"
+        case .preparing:            return "готовлю модель"
         case .listening:            return "слушаю"
         case .transcribing:         return "распознаю"
         case .refining:             return "причёсываю"
@@ -155,6 +156,8 @@ final class MenuBarController: NSObject {
             // Во всех рабочих фазах бренд уступает место состоянию: пользователю
             // там важно, слушают его или уже печатают.
             return Self.brandIcon()
+        case .preparing:
+            symbolName = "hourglass"
         case .listening:
             symbolName = "mic.fill"
         case .transcribing, .refining, .inserting:

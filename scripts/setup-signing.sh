@@ -23,8 +23,8 @@ set -euo pipefail
 IDENTITY_NAME="Quant Voice Self-Signed"
 KEYCHAIN="$HOME/Library/Keychains/login.keychain-db"
 
-echo "→ Проверяю, есть ли сертификат «$IDENTITY_NAME»…"
-if security find-identity -v -p codesigning 2>/dev/null | grep -q "$IDENTITY_NAME"; then
+echo "→ Проверяю, есть ли сертификат «${IDENTITY_NAME}»…"
+if security find-identity -p codesigning 2>/dev/null | grep -q "$IDENTITY_NAME"; then
     echo "✓ Уже есть — ничего делать не нужно."
     exit 0
 fi
@@ -64,9 +64,9 @@ security import "$TMP/identity.p12" -k "$KEYCHAIN" -P quantvoice \
     -T /usr/bin/codesign >/dev/null 2>&1
 
 # Проверка результата.
-if security find-identity -v -p codesigning 2>/dev/null | grep -q "$IDENTITY_NAME"; then
+if security find-identity -p codesigning 2>/dev/null | grep -q "$IDENTITY_NAME"; then
     echo ""
-    echo "✓ Готово. Сертификат «$IDENTITY_NAME» установлен."
+    echo "✓ Готово. Сертификат «${IDENTITY_NAME}» установлен."
     echo "  Теперь ./scripts/build.sh подхватит его сам."
     echo "  При ПЕРВОЙ подписи macOS может один раз спросить пароль —"
     echo "  нажми «Всегда разрешать» (Always Allow)."

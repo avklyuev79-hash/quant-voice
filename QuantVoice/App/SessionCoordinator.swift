@@ -200,7 +200,10 @@ final class SessionCoordinator {
             return
         }
 
-        appState.sessionState = .transcribing
+        // Если движок ещё греется, показываем «Готовлю модель…», а не «Распознаю…»:
+        // первый холодный прогрев занимает минуты, и на «Распознаю…» это выглядит
+        // как зависание — человек закрывает приложение, не дождавшись (баг Ани, 23.07).
+        appState.sessionState = engine.value.isReady ? .transcribing : .preparing
         logger.info(String(format: "Запись остановлена: %.2f с аудио", segment.duration))
 
         pipelineTask = Task { [weak self] in
@@ -225,9 +228,14 @@ final class SessionCoordinator {
 
         do {
             // Первая фраза после старта могла прийти раньше конца прогрева — ждём его,
-            // а не бросаем engineNotReady пользователю в лицо.
+            // а не бросаем engineNotReady пользователю в лицо. Пока ждём — на экране
+            // «Готовлю модель…» (выставлено в finishSession).
             await warmUpTask?.value
             try Task.checkCancellation()
+            // Прогрев позади — с этого момента идёт собственно распознавание.
+            if appState.sessionState == .preparing {
+                appState.sessionState = .transcribing
+            }
 
             // 1. Распознавание. Промпт из словаря терминов (ТЗ 6.6, уровень 1):
             // без него модель с зафиксированным русским честно транслитерирует
@@ -323,7 +331,7 @@ final class SessionCoordinator {
         switch appState.sessionState {
         case .completed, .cancelled, .failed:
             appState.sessionState = .idle
-        case .idle, .listening, .transcribing, .refining, .inserting:
+        case .idle, .preparing, .listening, .transcribing, .refining, .inserting:
             break
         }
     }

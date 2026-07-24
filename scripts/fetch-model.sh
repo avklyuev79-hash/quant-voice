@@ -93,7 +93,7 @@ while IFS=$'\t' read -r expected path; do
             echo "  уже скачанное сохранится, докачает только остаток."
             exit 1
         fi
-        echo "  ↻ обрыв, попытка $ATTEMPT…"
+        echo "  ↻ обрыв, попытка ${ATTEMPT}…"
         sleep 3
     done
 done <<< "$FILES"

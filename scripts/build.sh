@@ -128,8 +128,8 @@ xattr -cr "$APP_BUNDLE"
 # designated requirement стабилен: права выдаются один раз и держатся.
 # Сертификат создаётся один раз: ./scripts/setup-signing.sh
 SIGN_IDENTITY="Quant Voice Self-Signed"
-if security find-identity -v -p codesigning 2>/dev/null | grep -q "$SIGN_IDENTITY"; then
-    echo "  Подпись: стабильный сертификат «$SIGN_IDENTITY»"
+if security find-identity -p codesigning 2>/dev/null | grep -q "$SIGN_IDENTITY"; then
+    echo "  Подпись: стабильный сертификат «${SIGN_IDENTITY}»"
     codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_BUNDLE"
 else
     echo "  ⚠ Постоянного сертификата нет — подписываю ad-hoc."

@@ -40,7 +40,7 @@ final class AppState {
     /// Терминальные состояния (completed/cancelled/failed) — уже не активная.
     var isSessionActive: Bool {
         switch sessionState {
-        case .listening, .transcribing, .refining, .inserting:
+        case .preparing, .listening, .transcribing, .refining, .inserting:
             return true
         case .idle, .completed, .cancelled, .failed:
             return false

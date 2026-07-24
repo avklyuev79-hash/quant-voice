@@ -45,6 +45,20 @@ final class OnboardingModel {
     /// поэтому завершение мастера предложит перезапуск.
     private(set) var didDownloadThisSession = false
 
+    // MARK: - Прогрев модели
+
+    /// Идёт ли первичный прогрев (компиляция модели под чип). Первый раз это
+    /// минуты; результат кэшируется системой, дальше прогрев — секунды.
+    var isWarmingUp = false
+    /// Прогрев успешно завершён в этой сессии — модель скомпилирована и закэширована.
+    private(set) var warmUpDone = false
+    var warmUpError: String?
+
+    /// Держим движок ссылкой на время прогрева: без сильной ссылки его Task
+    /// оборвётся, компиляция не закончится и не закэшируется — ровно та петля,
+    /// из-за которой первый прогрев не доходил до конца.
+    private var warmUpEngine: WhisperKitEngine?
+
     var descriptor: WhisperModelDescriptor {
         ModelManager.descriptor(for: selectedProfile)
     }
@@ -125,11 +139,50 @@ final class OnboardingModel {
                 Preferences.setModelProfile(self.selectedProfile)
                 self.refreshInstalled()
                 self.logger.info("Онбординг: модель «\(descriptor.variant)» установлена")
+                // Сразу компилируем модель под чип, пока человек ещё в мастере:
+                // первый прогрев долгий и разовый, и лучше пройти его здесь под
+                // явным индикатором, чем потом на «Распознаю…», приняв за зависание.
+                self.warmUpModel()
             } catch {
                 self.downloadError = error.localizedDescription
                 self.logger.error("Онбординг: модель не загрузилась: \(error.localizedDescription)")
             }
             self.isDownloading = false
+        }
+    }
+
+    /// Прогревает модель, если она на диске и ещё не прогрета. Дёргается при
+    /// появлении шага (модель могла быть скачана ранее) и после загрузки.
+    func prepareModelIfNeeded() {
+        guard selectedModelInstalled, !isWarmingUp, !warmUpDone, warmUpError == nil else { return }
+        warmUpModel()
+    }
+
+    /// Разовая компиляция модели под Neural Engine. Тяжёлая часть первого запуска;
+    /// после неё система кэширует результат и последующие прогревы — секунды.
+    func warmUpModel() {
+        guard !isWarmingUp, !warmUpDone else { return }
+        isWarmingUp = true
+        warmUpError = nil
+        let descriptor = self.descriptor
+        logger.info("Онбординг: прогрев модели «\(descriptor.variant)» — первичная компиляция под чип")
+
+        let engine = WhisperKitEngine(modelManager: modelManager,
+                                      profile: selectedProfile,
+                                      logger: logger)
+        warmUpEngine = engine
+
+        Task {
+            do {
+                try await engine.warmUp()
+                self.warmUpDone = true
+                self.logger.info("Онбординг: модель прогрета и закэширована — дальше запуск быстрый")
+            } catch {
+                self.warmUpError = error.localizedDescription
+                self.logger.error("Онбординг: прогрев не удался: \(error.localizedDescription)")
+            }
+            self.isWarmingUp = false
+            self.warmUpEngine = nil
         }
     }
 

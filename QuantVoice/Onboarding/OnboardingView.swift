@@ -116,7 +116,7 @@ struct OnboardingView: View {
                 .foregroundStyle(.secondary)
 
             if model.selectedModelInstalled {
-                statusLine(ok: true, text: "Модель уже на диске — можно идти дальше.")
+                statusLine(ok: true, text: "Модель на диске.")
             } else if model.isDownloading {
                 ProgressView(value: model.downloadProgress) {
                     Text("Загрузка… \(Int(model.downloadProgress * 100))%")
@@ -135,10 +135,30 @@ struct OnboardingView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            // Прогрев: разовая компиляция модели под чип. Проходим её здесь,
+            // под явным индикатором, чтобы потом первая диктовка не висела на
+            // «Распознаю…» минутами и не выглядела как зависание.
+            if model.isWarmingUp {
+                ProgressView {
+                    Text("Готовлю модель к работе… это разово, до пары минут. Не закрывай окно.")
+                        .font(.system(size: 12))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else if model.warmUpDone {
+                statusLine(ok: true, text: "Модель готова к работе.")
+            } else if let warmError = model.warmUpError {
+                Text("Не удалось подготовить модель: \(warmError)")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Text("Скачать можно и позже — из меню «Qv» → «Модель распознавания».")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+        // Модель могла быть скачана в прошлый заход — тогда прогреваем на появлении.
+        .onAppear { model.prepareModelIfNeeded() }
     }
 
     // MARK: - Шаг: микрофон
@@ -214,8 +234,11 @@ struct OnboardingView: View {
                 Button("Готово") { onDone() }
                     .keyboardShortcut(.defaultAction)
             } else {
+                // Пока идёт прогрев — не пускаем дальше: прерывать разовую
+                // компиляцию на полпути нельзя, иначе она не закэшируется.
                 Button("Далее") { model.next() }
                     .keyboardShortcut(.defaultAction)
+                    .disabled(model.isWarmingUp)
             }
         }
         .padding(.horizontal, 24)

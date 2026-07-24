@@ -26,20 +26,33 @@ public enum Preferences {
 
     private static let modelProfileKey = "modelProfile"
 
-    /// Профиль модели Whisper. Дефолт — `standard` (large-v3-turbo, 626 МБ).
+    /// Профиль модели Whisper. Дефолт, если пользователь не выбирал сам, —
+    /// по объёму памяти машины (см. `recommendedDefaultProfile`): на слабых
+    /// large-v3-turbo прогревается минутами и давит память, там берём small.
     ///
     /// Неизвестное значение НЕ роняет приложение и не молчит: логируется
     /// и подменяется дефолтом. Опечатка в терминале не должна выглядеть
     /// как «настройка не сработала».
     public static func modelProfile(logger: (any Logging)? = nil) -> WhisperModelProfile {
         guard let raw = UserDefaults.standard.string(forKey: modelProfileKey) else {
-            return .standard
+            return recommendedDefaultProfile()
         }
         guard let profile = WhisperModelProfile(rawValue: raw) else {
-            logger?.warning("Настройки: неизвестный профиль модели «\(raw)», беру standard. Допустимые: \(WhisperModelProfile.allCases.map(\.rawValue).joined(separator: ", "))")
-            return .standard
+            let fallback = recommendedDefaultProfile()
+            logger?.warning("Настройки: неизвестный профиль модели «\(raw)», беру \(fallback.rawValue). Допустимые: \(WhisperModelProfile.allCases.map(\.rawValue).joined(separator: ", "))")
+            return fallback
         }
         return profile
+    }
+
+    /// Рекомендованный профиль под конкретную машину, когда пользователь ещё
+    /// не выбрал сам. Порог по памяти: ≤ ~8 ГБ ОЗУ — `fast` (small), там
+    /// large-v3-turbo прогревается мучительно долго и жрёт почти всю память
+    /// (баг «бесконечное Готовлю модель» на 8 ГБ, 24.07.2026). Больше — `standard`.
+    /// Мастер первого запуска берёт это же значение и преселектит модель под машину.
+    public static func recommendedDefaultProfile() -> WhisperModelProfile {
+        let gib = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824.0
+        return gib <= 8.5 ? .fast : .standard
     }
 
     public static func setModelProfile(_ profile: WhisperModelProfile) {

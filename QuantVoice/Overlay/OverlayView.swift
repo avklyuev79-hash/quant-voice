@@ -50,7 +50,7 @@ struct OverlayView: View {
             // Живой уровень микрофона. Значение приходит колбэком захвата
             // через AppState — плашка ничего не опрашивает в цикле.
             LevelIndicator(level: appState.microphoneLevel)
-        case .transcribing, .refining, .inserting:
+        case .preparing, .transcribing, .refining, .inserting:
             ProgressView()
                 .controlSize(.small)
         case .completed:
@@ -72,6 +72,10 @@ struct OverlayView: View {
         switch appState.sessionState {
         case .idle:
             return "Готов"
+        case .preparing:
+            // Первый прогрев после установки — разовый и долгий. Говорим прямо,
+            // чтобы не приняли за зависание и не закрыли приложение на полпути.
+            return "Готовлю модель — это разово, до пары минут…"
         case .listening:
             return "Слушаю…"
         case .transcribing:

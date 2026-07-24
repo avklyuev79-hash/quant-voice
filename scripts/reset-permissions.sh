@@ -22,7 +22,7 @@ BUNDLE_ID="com.quant.voice"
 APP_NAME="QuantVoice"
 APP_BUNDLE="$HOME/QuantVoice-build/$APP_NAME.app"
 
-echo "→ Сбрасываю все права $BUNDLE_ID…"
+echo "→ Сбрасываю все права ${BUNDLE_ID}…"
 if tccutil reset All "$BUNDLE_ID"; then
     echo "✓ Права сброшены."
 else
